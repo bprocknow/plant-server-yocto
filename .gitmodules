@@ -1,3 +1,9 @@
 [submodule "poky"]
 	path = poky
 	url = https://github.com/yoctoproject/poky.git
+[submodule "meta-tegra"]
+	path = meta-tegra
+	url = https://github.com/OE4T/meta-tegra.git
+[submodule "meta-homeassistant"]
+	path = meta-homeassistant
+	url = https://github.com/meta-homeassistant/meta-homeassistant.git
