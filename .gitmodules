@@ -1,3 +1,6 @@
 [submodule "poky"]
 	path = poky
 	url = https://github.com/yoctoproject/poky.git
+[submodule "meta-tegra"]
+	path = meta-tegra
+	url = https://github.com/OE4T/meta-tegra.git
