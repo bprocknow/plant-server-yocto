@@ -1,0 +1,5 @@
+build-plants/tmp
+build-plants/cache
+build-plants/downloads
+build-plants/sstate-cache
+build-plants/bitbake-cookerdaemon.log
