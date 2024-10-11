@@ -3,8 +3,14 @@ LICENSE = "MIT"
 
 inherit core-image
 
+# 200 MiB of additional storage for config and runtime data
+IMAGE_ROOTFS_EXTRA_SPACE = "204800"
+
 IMAGE_INSTALL += " \
 	packagegroup-core-boot \
+	chromium-x11 \
+	python3-homeassistant \
+	python3-appdaemon \
 	systemd \
 	systemd-analyze \
 	vim \

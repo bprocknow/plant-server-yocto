@@ -7,3 +7,21 @@
 [submodule "meta-homeassistant"]
 	path = meta-homeassistant
 	url = https://github.com/meta-homeassistant/meta-homeassistant.git
+[submodule "meta-python-mixin"]
+	path = meta-python-mixin
+	url = https://gitlab.eclipse.org/eclipse/oniro-core/meta-python-mixin.git
+[submodule "meta-security"]
+	path = meta-security
+	url = https://git.yoctoproject.org/git/meta-security
+[submodule "meta-openembedded"]
+	path = meta-openembedded
+	url = https://github.com/openembedded/meta-openembedded.git
+[submodule "meta-browser"]
+	path = meta-browser
+	url = https://github.com/OSSystems/meta-browser.git
+[submodule "meta-clang"]
+	path = meta-clang
+	url = https://github.com/kraj/meta-clang.git
+[submodule "meta-rust"]
+	path = meta-rust
+	url = https://github.com/meta-rust/meta-rust.git
