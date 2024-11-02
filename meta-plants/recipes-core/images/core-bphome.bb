@@ -7,6 +7,10 @@ inherit core-image
 IMAGE_ROOTFS_EXTRA_SPACE = "204800"
 
 IMAGE_INSTALL += " \
+	xserver-xorg \
+	xinit \
+	xserver-xorg-video-nvidia \
+	xf86-input-libinput \
 	packagegroup-core-boot \
 	chromium-x11 \
 	python3-homeassistant \
