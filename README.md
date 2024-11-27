@@ -1,21 +1,7 @@
 # plant-server-yocto
 
 Environment:
-Supported distribution (snip from dunfell poky):
-```
-SANITY_TESTED_DISTROS ?= " \
-            poky-2.7 \n \
-            poky-3.0 \n \
-            poky-3.1 \n \
-            ubuntu-18.04 \n \
-            ubuntu-20.04 \n \
-            ubuntu-22.04 \n \
-            fedora-37 \n \
-            debian-11 \n \
-            opensuseleap-15.3 \n \
-            almalinux-8.8 \n \
-            "
-```
+meta-browser requires binutils-2.53, which is old.  A fedora34 container has this dependency.
 
 Package Dependencies (Fedora):
 gcc python3 wget git cpio diffstat gawk perl file
@@ -29,6 +15,31 @@ Installing poky buildtools:
 Source the poky environment:
 
 . poky/buildtools/environment
+. poky/oe-init-build-env ./build-plants/
+
+Building the image:
+bitbake core-\<bphome?\>
+
+----------------------------------
+
+Connecting to WIFI:
+TODO:  Make an application that is started (part of homeassistant?) that asks for WIFI login.
+
+1. Modify \/etc/wpa\_supplicant\/wpa\_supplicant.conf
+
+network={
+    ssid="MyNetworkSSID"
+    psk="MyNetworkPassword"
+}
+
+2. Start wpa\_supplicant with the updated configuration:
+wpa\_supplicant -B -i \<interface> -c \/etc/wpa\_supplicant\/wpa\_supplicant.conf
+
+3. Obtain an IP address with DHCP:
+dhclient \<interface\>
+
+4. Verify the connection:
+ping www.google.com
 
 ----------------------------------
 
@@ -48,5 +59,5 @@ Hold down the Forced Recovery button (says 'REC' on the pcb)
 With REC held down, press and release the reset button (says 'RST' on the pcb)
 Hold REC for 2 more seconds, and release
 
-Run the deploy.sh script
+Run the deploy.sh script:
 ./deploy.sh core-<bphome> jetson-tx2-devkit

@@ -1,0 +1,12 @@
+[Unit]
+Description=Launch Chromium Browser
+After=wifi.service
+Requires=wifi.service
+
+[Service]
+Type=simple
+ExecStart=/var/lib/homeassistant/init_ha.sh
+
+[Install]
+WantedBy=multi-user.target
+

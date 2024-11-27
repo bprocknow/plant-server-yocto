@@ -1,0 +1,13 @@
+[Unit]
+Description=Launch Chromium Browser
+After=configha.service
+Requires=configha.service
+
+[Service]
+Type=simple
+Environment=HOME=/home/root
+ExecStart=xinit
+
+[Install]
+WantedBy=multi-user.target
+
