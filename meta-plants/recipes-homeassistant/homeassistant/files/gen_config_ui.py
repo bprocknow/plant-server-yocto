@@ -27,103 +27,166 @@ def read_plants_file(filename):
             except ValueError:
                 print(f"Invalid days between watering for plant {plant_name}")
                 continue
-            plants.append({'plant_name': plant_name, 'plant_id': sanitize_plant_id(plant_name), 'days_between_watering': days_between_watering})
+            plants.append({
+                'plant_name': plant_name,
+                'plant_id': sanitize_plant_id(plant_name),
+                'days_between_watering': days_between_watering
+            })
     return plants
 
 def generate_configuration_yaml(plants):
-    config_lines = []
-    # Add default_config, http, lovelace
-    config_lines.append('default_config:\n')
-    config_lines.append('http:')
-    config_lines.append('  server_host: 0.0.0.0')
-    config_lines.append('  server_port: 8123\n')
-    config_lines.append('lovelace:')
-    config_lines.append('  mode: yaml\n')
-    # input_datetime:
-    config_lines.append('input_datetime:')
-    for plant in plants:
-        config_lines.append(f'  last_watered_{plant["plant_id"]}:')
-        config_lines.append(f'    name: Last watered date {plant["plant_name"]}')
-        config_lines.append('    has_date: true')
-        config_lines.append('    has_time: true')
-    config_lines.append('')
+    config_yaml = '''default_config:
 
-    # sensor:
-    config_lines.append('sensor:')
-    config_lines.append('  - platform: time_date')
-    config_lines.append('    display_options:')
-    config_lines.append("      - 'date'")
-    config_lines.append("      - 'time'")
-    config_lines.append('  - platform: template')
-    config_lines.append('    sensors:')
-    config_lines.append('      current_datetime:')
-    config_lines.append('        friendly_name: "Current time and date"')
-    config_lines.append('        value_template: >')
-    config_lines.append("          {{ now().strftime('%Y-%m-%d %H-%M-%s') }}")
-    config_lines.append('        entity_id: sensor.time')
-    for plant in plants:
-        config_lines.append(f'      next_water_days_{plant["plant_id"]}:')
-        config_lines.append(f'        friendly_name: "Next watering for {plant["plant_name"]}"')
-        config_lines.append('        value_template: >')
-        config_lines.append(f"          {{{{ ((as_timestamp(states('input_datetime.last_watered_{plant['plant_id']}')) / 86400) + {plant['days_between_watering']}) - (as_timestamp(now()) / 86400) }}}}")
-        config_lines.append('        entity_id:')
-        config_lines.append(f'          - input_datetime.last_watered_{plant["plant_id"]}')
-        config_lines.append('          - sensor.time')
-    config_lines.append('')
+http:
+  server_host: 0.0.0.0
+  server_port: 8123
 
-    # binary_sensor:
-    config_lines.append('binary_sensor:')
-    config_lines.append('  - platform: template')
-    config_lines.append('    sensors:')
-    for plant in plants:
-        config_lines.append(f'      needs_watering_{plant["plant_id"]}:')
-        config_lines.append(f'        friendly_name: "{plant["plant_name"]} needs watering"')
-        config_lines.append('        value_template: >')
-        config_lines.append(f"          {{{{ (as_timestamp(states('input_datetime.last_watered_{plant['plant_id']}')) + ({plant['days_between_watering']} * 86400)) <= (as_timestamp(now())) }}}}")
-    config_lines.append('')
+lovelace:
+  mode: yaml
 
-    # script:
-    config_lines.append('script:')
+input_datetime:
+'''
     for plant in plants:
-        config_lines.append(f'  water_{plant["plant_id"]}:')
-        config_lines.append(f'    alias: Water {plant["plant_name"]}')
-        config_lines.append('    sequence:')
-        config_lines.append('      - service: input_datetime.set_datetime')
-        config_lines.append('        data_template:')
-        config_lines.append(f'          entity_id: input_datetime.last_watered_{plant["plant_id"]}')
-        config_lines.append("          datetime: \"{{ now().strftime('%Y-%m-%d %H:%M:%S') }}\"")
-    config_lines.append('')
+        config_yaml += f'''  last_watered_{plant["plant_id"]}:
+    name: Last watered date {plant["plant_name"]}
+    has_date: true
+    has_time: true
+'''
+    config_yaml += '''
+sensor:
+  - platform: time_date
+    display_options:
+      - 'date'
+      - 'time'
+  - platform: template
+    sensors:
+      current_datetime:
+        friendly_name: "Current time and date"
+        value_template: >
+          {{ now().strftime('%Y-%m-%d %H-%M-%S') }}
+        entity_id: sensor.time
+'''
+    for plant in plants:
+        config_yaml += f'''      next_water_days_{plant["plant_id"]}:
+        friendly_name: "Next watering for {plant["plant_name"]}"
+        value_template: >
+          {{{{ (((as_timestamp(states('input_datetime.last_watered_{plant["plant_id"]}')) / 86400) + {plant["days_between_watering"]}) - (as_timestamp(now()) / 86400)) | float | round(2) }}}}
+        entity_id:
+          - input_datetime.last_watered_{plant["plant_id"]}
+          - sensor.time
+'''
+    config_yaml += '''
+binary_sensor:
+  - platform: template
+    sensors:
+'''
+    for plant in plants:
+        config_yaml += f'''      needs_watering_{plant["plant_id"]}:
+        friendly_name: "{plant["plant_name"]} needs watering"
+        value_template: >
+          {{{{ (as_timestamp(states('input_datetime.last_watered_{plant["plant_id"]}')) + ({plant["days_between_watering"]} * 86400)) <= as_timestamp(now()) }}}}
+'''
+    config_yaml += '''
+input_boolean:
+  plant_lights_toggle:
+    name: Plant Lights Input Toggle
+    initial: off
+  ambient_lights_toggle:
+    name: Ambient Lights Input Toggle
+    initial: off
 
-    return '\n'.join(config_lines)
+shell_command:
+  plant_light_cmd: /bin/bash /var/lib/homeassistant/plant_lights.sh {{ parameter }}
+  ambient_light_cmd: /bin/bash /var/lib/homeassistant/ambient_lights.sh {{ parameter }}
+
+automation:
+  - alias: Plant lights on
+    trigger:
+        - platform: state
+          entity_id: input_boolean.plant_lights_toggle
+          to: 'on'
+    action:
+      - service: shell_command.plant_light_cmd
+        data:
+          parameter: '1'
+  - alias: Plant lights off
+    trigger:
+        - platform: state
+          entity_id: input_boolean.plant_lights_toggle
+          to: 'off'
+    action:
+      - service: shell_command.plant_light_cmd
+        data:
+          parameter: '0'
+  - alias: Ambient lights on
+    trigger:
+        - platform: state
+          entity_id: input_boolean.ambient_lights_toggle
+          to: 'on'
+    action:
+      - service: shell_command.ambient_light_cmd
+        data:
+          parameter: '1'
+  - alias: Ambient lights off
+    trigger:
+        - platform: state
+          entity_id: input_boolean.ambient_lights_toggle
+          to: 'off'
+    action:
+      - service: shell_command.ambient_light_cmd
+        data:
+          parameter: '0'
+
+script:
+'''
+    for plant in plants:
+        config_yaml += f'''  water_{plant["plant_id"]}:
+    alias: Water {plant["plant_name"]}
+    sequence:
+      - service: input_datetime.set_datetime
+        data_template:
+          entity_id: input_datetime.last_watered_{plant["plant_id"]}
+          datetime: "{{{{ now().strftime('%Y-%m-%d %H:%M:%S') }}}}"
+'''
+    return config_yaml
 
 def generate_ui_lovelace_yaml(plants):
-    ui_lines = []
-    ui_lines.append('title: Home\n')
-    ui_lines.append('views:')
-    ui_lines.append('  - path: default_view')
-    ui_lines.append('    title: Home')
-    ui_lines.append('    cards:')
-    ui_lines.append('      - type: markdown')
-    ui_lines.append('        content: >')
-    ui_lines.append("          # {{ states('sensor.date') }} | {{ states('sensor.time') }}")
-    ui_lines.append('      - type: entities')
-    ui_lines.append('        title: Plant Watering Schedule')
-    ui_lines.append('        entities:')
-    for plant in plants:
-        ui_lines.append(f'          - entity: input_datetime.last_watered_{plant["plant_id"]}')
-        ui_lines.append(f'            name: Last time {plant["plant_name"]} was watered')
-        ui_lines.append(f'          - entity: sensor.next_water_days_{plant["plant_id"]}')
-        ui_lines.append(f'            name: {plant["plant_name"]} next watering date')
-        ui_lines.append(f'          - entity: binary_sensor.needs_watering_{plant["plant_id"]}')
-        ui_lines.append(f'            name: {plant["plant_name"]} needs watering today')
-        ui_lines.append(f'          - type: call-service')
-        ui_lines.append(f'            name: Water {plant["plant_name"]}')
-        ui_lines.append('            icon: mdi:water')
-        ui_lines.append(f'            action_name: Water {plant["plant_name"]} now')
-        ui_lines.append(f'            service: script.water_{plant["plant_id"]}')
-    ui_lines.append('')
+    ui_yaml = '''title: Home
 
-    return '\n'.join(ui_lines)
+views:
+  - path: default_view
+    title: Home
+    cards:
+      - type: vertical-stack
+        cards:
+        - type: markdown
+          content: >
+            # {{ states('sensor.date') }} | {{ states('sensor.time') }}
+        - type: entities
+          title: Light Control Panel
+          entities:
+            - entity: input_boolean.plant_lights_toggle
+              name: Plant Light Switch
+            - entity: input_boolean.ambient_lights_toggle
+              name: Ambient Light Switch
+'''
+    for plant in plants:
+        ui_yaml += f'''        - type: entities
+          title: {plant["plant_name"]} Schedule
+          entities:
+            - entity: input_datetime.last_watered_{plant["plant_id"]}
+              name: Last time {plant["plant_name"]} was watered
+            - entity: sensor.next_water_days_{plant["plant_id"]}
+              name: {plant["plant_name"]} next watering date
+            - entity: binary_sensor.needs_watering_{plant["plant_id"]}
+              name: {plant["plant_name"]} needs watering today
+            - type: call-service
+              name: Water {plant["plant_name"]}
+              icon: mdi:water
+              action_name: Water {plant["plant_name"]} now
+              service: script.water_{plant["plant_id"]}
+'''
+    return ui_yaml
 
 def main():
     plants = read_plants_file('plants.yaml')

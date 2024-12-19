@@ -8,6 +8,10 @@ TIMEZONE = "America/Chicago"
 # 200 MiB of additional storage for config and runtime data
 IMAGE_ROOTFS_EXTRA_SPACE = "204800"
 
+IMAGE_FEATURES += " \
+	ssh-server-dropbear \
+	"
+
 IMAGE_INSTALL += " \
 	glibc \
 	pixman \
@@ -17,6 +21,7 @@ IMAGE_INSTALL += " \
 	xserver-xorg-module-libwfb \
 	xserver-xorg-video-nvidia \
 	xserver-xorg \
+	xset \
 	xf86-input-libinput \
 	packagegroup-core-boot \
 	chromium-x11 \
@@ -34,5 +39,9 @@ IMAGE_INSTALL += " \
 	xrandr \
 	xinput \
 	libinput \
+	python3-pyserial \
+	python3-pyserial-asyncio \
+	python3-appdaemon \
+	dropbear \
 	"
 

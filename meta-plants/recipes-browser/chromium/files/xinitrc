@@ -5,4 +5,4 @@ sleep 2
 DISPLAY_OUTPUT=$(xrandr | grep "connected" | cut -f1 -d " ")
 xrandr --output $DISPLAY_OUTPUT --rotate right
 
-exec /usr/bin/chromium --no-sandbox --app-launch-url-for-shortcuts-menu-item http://0.0.0.0:8123
+exec /usr/bin/chromium --no-sandbox --start-fullscreen --app-launch-url-for-shortcuts-menu-item http://0.0.0.0:8123
